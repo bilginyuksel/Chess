@@ -1,0 +1,5 @@
+By the way in move function, swap elements and isCheck control again. If the result is true
+than it is invalid movement repeat your move if it is false call nextturn() function.
+
+Control isCheck at every moment and update user status or game status doesn't matter.
+Manage user turn system...
