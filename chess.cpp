@@ -1,4 +1,5 @@
 #include "chess.h"
+#include <windows.h>
 
 CBoard :: CBoard(){
     // config board. Set pieces start formation.
@@ -34,14 +35,22 @@ CBoard :: CBoard(){
 }
 
 void CBoard :: display(){
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
     std::cout<<"a b c d e f g h"<<std::endl;
+    // SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
     for (int i=0;i<8;i++) {
         for(int j=0;j<8;j++) {
             if(board[i][j]==nullptr){
             std::cout<<"  ";
-        } else std::cout<<(char)board[i][j]->getRep()<<" ";
+        } else {
+            if(board[i][j]->getColor()==true){
+                SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+            }else SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+            std::cout<<(char)board[i][j]->getRep()<<" ";
+            }
         
         }
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
         std::cout<<" "<<i+1<<std::endl;
     }
 }
@@ -100,7 +109,6 @@ bool CRook :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
     if(currX == destX && currY != destY ){
         //  moving on axis Y
         distance = destY- currY; // initialize distance
-        std::cout<<"X Equal Distance : "<<distance<<std::endl;
         if(distance<0){
             for(int i = destY+1; i<currY;i++){
                 // move on board columns
@@ -119,7 +127,6 @@ bool CRook :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
     else if(currY == destY && currX != destX){
         // moving on axis X
         distance = destX- currX; // initialize distance
-        std::cout<<"Y Equal Distance : "<<distance<<std::endl;
 
         if(distance<0){
             for(int i = destX+1; i<currX;i++){
@@ -273,12 +280,22 @@ bool CKing :: canMove(int currX, int currY, int destX, int destY, CPiece *board[
 
 void CChess :: start(){
     do{
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
+        std::cout<<(turn?"White player":"Black player")<<std::endl;
+        std::cout<<"Status :"<<(turn?player1.showStatus():player2.showStatus())<<std::endl;
+        // point
+        
+        gBoard.display();
         std::string move_info;
         std::cin>>move_info;
         move(move_info,gBoard.board); // change turn in move.
-        if(isCheck(gBoard.board)) s=CHECK;
-        gBoard.display();
-    }while((s != GAMEOVER) ||  (s !=STALEMATE));
+        if(isCheck(gBoard.board)) {
+            // active player status need's to change to check
+            turn?player1.setStatus(CHECK):player2.setStatus(CHECK);
+        }else turn?player1.setStatus(NORMAL):player2.setStatus(NORMAL);
+
+
+    }while((gS != GAMEOVER) ||  (gS !=STALEMATE));
 }
 
 
@@ -305,33 +322,48 @@ void CChess :: move(std::string m,CPiece* board[8][8]){
     // std::cout<<"CurrY : "<<currY<<std::endl;
     // std::cout<<"DestX : "<<destX<<std::endl;
     // std::cout<<"DestY : "<<destY<<std::endl;
+
+    
+
     
     // check if move is valid or not
-    bool isValid = board[currX][currY]->canMove(currX,currY,destX,destY,board);
+    bool isValid = false;
+    // Check if player has the same color.
+    if(board[currX][currY]->getColor()==turn)
+        isValid = board[currX][currY]->canMove(currX,currY,destX,destY,board);
 
     
     if(isValid){
         std::cout<<"Valid."<<std::endl;
         // whose turn is it, just add move to player's move.
-        turn?player1.addMove(m):player2.addMove(m);
         // for eat situation (kill the piece) we have to check move valid until the last destination**
 
-        // auto swap = [board]()-> void{
-            
-        // };
-        // auto undoSwap = [board]()->void{
 
-        // };
+        CPiece * currPiece = board[currX][currY];
+        CPiece * destPiece = board[destX][destY];
 
+        auto swap = [board,currX,currY,destX,destY]()->void {
+            // swap operation
+            board[destX][destY] = board[currX][currY];
+            board[currX][currY] = nullptr;
+        };
+
+        auto undoSwap = [board,currPiece,destPiece,currX,currY,destX,destY]()-> void {
+            // undo operation
+            board[currX][currY] = currPiece;
+            board[destX][destY] = destPiece;
+        };
 
         // swap elements to that position
-        board[destX][destY] = board[currX][currY];
-        board[currX][currY] = nullptr;
+        swap();
         // check if isCheck after you moved the pieces
         // invalid move
 
-        if(isCheck(board)); 
-        else nextTurn();
+        if(isCheck(board))undoSwap();
+        else {
+            turn?player1.addMove(m):player2.addMove(m);
+            nextTurn();
+        }
 
     }else{
         std::cout<<"Invalid."<<std::endl;

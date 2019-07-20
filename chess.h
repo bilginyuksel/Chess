@@ -2,8 +2,9 @@
 #include <vector>
 #include <math.h>
 
-enum columns{a,b,c,d,e,f,g,h};
-enum status{ACTIVE=100,CHECK,CHECKMATE,GAMEOVER,STALEMATE};
+// enum columns{a,b,c,d,e,f,g,h};
+enum GameStatus{ACTIVE=100,GAMEOVER,STALEMATE};
+enum PlayerStatus{NORMAL=50,CHECK,CHECKMATE};
 
 // abstract piece class
 class CPiece{
@@ -85,11 +86,24 @@ private:
     std::string nick;
     bool color;
     int score;
+    PlayerStatus pS;
     std::vector< std::string > moves;
 
 public:
     CPlayer(){
         score = 0;
+        pS = NORMAL;
+    }
+    void setStatus(PlayerStatus s){
+        pS = s;
+    }
+    std::string showStatus(){
+        if(pS==NORMAL)
+            return " NORMAL";
+        else if(pS == CHECK)
+            return " CHECK";
+        else if(pS == CHECKMATE)
+            return " CHECK MATE";
     }
     void addMove(std::string move){
         moves.push_back(move);
@@ -102,7 +116,7 @@ class CChess{
 private:
     CBoard gBoard;
     bool turn;
-    status s;
+    GameStatus gS;
     CPlayer player1; // plays white pieces
     CPlayer player2; // plays black pieces
 
@@ -112,7 +126,7 @@ public:
     CChess(){
         // Starting conditions
         player1.setColor(true); player2.setColor(false);
-        s=ACTIVE;
+        gS=ACTIVE;
         turn = true;
     }
     void start();
