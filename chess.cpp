@@ -41,7 +41,8 @@ void CBoard :: display(){
     for (int i=0;i<8;i++) {
         for(int j=0;j<8;j++) {
             if(board[i][j]==nullptr){
-            std::cout<<"  ";
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
+            std::cout<<". ";
         } else {
             if(board[i][j]->getColor()==true){
                 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
@@ -59,6 +60,22 @@ bool CPawn :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
 
     // find distance
     int dist = destX-currX;
+    
+    // First move could be 2 step for pawn.
+    if(dist==2 && isFirstMove){
+        for(int i=currX+1;i<=destX;i++){
+            if(board[i][currY]!=nullptr) return false;
+        }
+        isFirstMove = false;
+        return true;
+    }else if(dist==-2 && isFirstMove){
+        for(int i=currX-1;i>=destX;i--){
+            if(board[i][currY]!=nullptr) return false;
+        }
+        isFirstMove = false;
+        return true;
+    }
+
 
     // early check for minimum wasting time.
     if(dist>1 || dist<-1) return false;
@@ -68,22 +85,31 @@ bool CPawn :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
         // black moving
         if(board[destX][destY]==nullptr){
             // empty square move forward
+            isFirstMove = false;
             return true;
         }else if(board[destX][destY]!=nullptr && destY==currY)return false;
         // not empty square it means trying to eat something
         // check if it has not the same color go on it.
-        return (board[destX][destY]!=nullptr && board[destX][destY]->getColor()!=getColor())?true:false;
+        if(board[destX][destY]!=nullptr && board[destX][destY]->getColor()!=getColor()){
+            isFirstMove = false;
+            return true;
+        }
+        return false;
 
     } else if(dist>0 && getColor()==true){    // If distance is positive than it should be black pawn or it is invalid move
         // white pawn moving forward
         if(board[destX][destY]==nullptr){
             // empty square move forward
+            isFirstMove = false;
             return true;
         }else if(board[destX][destY]!=nullptr && destY==currY)return false;
         // not empty square it means trying to eat something
         // check if it has not the same color go on it.
-        return (board[destX][destY]!=nullptr && board[destX][destY]->getColor()!=getColor())?true:false;
-
+        if(board[destX][destY]!=nullptr && board[destX][destY]->getColor()!=getColor()){
+            isFirstMove = false;
+            return true;
+        }
+        return false;
         
     }    
 
@@ -265,6 +291,19 @@ bool CKnight :: canMove(int currX, int currY, int destX, int destY, CPiece *boar
 }
 
 bool CKing :: canMove(int currX, int currY, int destX, int destY, CPiece *board[8][8]){
+
+    // if(board[destX][destY]!=nullptr && board[destX][destY]->getRep()=='r' && isCastling){
+    //     // castling thing...
+    //     // x's have to stable
+    //     if(currX!=destX) return false;
+    //     int cd = destY-currY;
+    //     if(cd<0){
+    //         for(int i=currY;)
+    //     }else{
+
+    //     }
+    // }
+
     // Check if same color piece at the destination
     if(board[destX][destY]!=nullptr && board[destX][destY]->getColor()==getColor()) return false;
 
@@ -274,21 +313,42 @@ bool CKing :: canMove(int currX, int currY, int destX, int destY, CPiece *board[
     // std::cout<<"King Distance : "<<dist<<std::endl;
     if(dist!=1) return false;
 
-   
+
+    isCastling = false;
     return true;
 }
 
+int calcRank(bool turn,CPiece*board[8][8]){
+    int score=0;
+    for(int i=0;i<8;i++) for(int j=0;j<8;j++) if(board[i][j]!=nullptr && board[i][j]->getColor()==turn) score+=board[i][j]->getRank();
+    return score;
+}
+
+
 void CChess :: start(){
+    
     do{
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
+        std::cout<<(turn?player1.getMoves():player2.getMoves())<<std::endl;
         std::cout<<(turn?"White player":"Black player")<<std::endl;
+        std::cout<<"Score : "<<calcRank(turn,gBoard.board)<<std::endl;
         std::cout<<"Status :"<<(turn?player1.showStatus():player2.showStatus())<<std::endl;
         // point
+
         
         gBoard.display();
         std::string move_info;
         std::cin>>move_info;
-        move(move_info,gBoard.board); // change turn in move.
+        try{
+            move(move_info,gBoard.board); // change turn in move.
+        }catch(EmptySquareException e){
+            std::cout<<"You are trying to move empty square."<<std::endl; continue;
+        }catch(OutOfBoardException o){
+            std::cout<<"Out of board please enter actual columns and rows."<<std::endl; continue;
+        }catch(WrongInputException w){
+            std::cout<<"Wrong input please try again."<<std::endl; continue;
+        }
+        
         if(isCheck(gBoard.board)) {
             // active player status need's to change to check
             turn?player1.setStatus(CHECK):player2.setStatus(CHECK);
@@ -302,6 +362,9 @@ void CChess :: start(){
 void CChess :: move(std::string m,CPiece* board[8][8]){
     // substring string
     // a b c d e f g h// 0 1 2 3 4 5 6 7
+    if(m.length()!=4) throw WrongInputException();
+    // you can check as regular expressions but not necessary.
+
     std::string currCol=m.substr(0,1);
     int currX=std::stoi(m.substr(1,1));
     std::string destCol=m.substr(2,1);
@@ -324,7 +387,9 @@ void CChess :: move(std::string m,CPiece* board[8][8]){
     // std::cout<<"DestY : "<<destY<<std::endl;
 
     
-
+    if(currX>7 || currY>7 || destX>7 || destY>7) throw OutOfBoardException();
+    if(currX<0 || currY<0 || destX<0 || destY<0) throw OutOfBoardException();
+    if(board[currX][currY]==nullptr) throw EmptySquareException();
     
     // check if move is valid or not
     bool isValid = false;
@@ -334,7 +399,7 @@ void CChess :: move(std::string m,CPiece* board[8][8]){
 
     
     if(isValid){
-        std::cout<<"Valid."<<std::endl;
+        std::cout<<"Valid."<<std::endl<<std::endl;
         // whose turn is it, just add move to player's move.
         // for eat situation (kill the piece) we have to check move valid until the last destination**
 
@@ -366,7 +431,7 @@ void CChess :: move(std::string m,CPiece* board[8][8]){
         }
 
     }else{
-        std::cout<<"Invalid."<<std::endl;
+        std::cout<<"Invalid."<<std::endl<<std::endl;
         // repeat move. this move is invalid.
     }
 
@@ -399,6 +464,20 @@ bool CChess :: isCheck(CPiece* board[8][8]){
         }
     }
     return false;
+}
+
+bool CChess :: isCheckMate(CPiece* board[8][8]){
+
+    // Check for all possible moves, and if any move doesnt rescue you from your check status
+    // it is checkmate
+    // std::vector <CPiece> pieces;
+    // for(int i=0;i<8;i++){
+    //     for(int j=0;j<8;j++){
+    //         pieces.push_back();
+    //     }
+    // }
+
+    // Play all the same color pieces, for all possible moves. Figure how to do this.
 }
 
 int main(){

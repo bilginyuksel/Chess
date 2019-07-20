@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
+#include "chessExc.h"
+#include <string>
 
 // enum columns{a,b,c,d,e,f,g,h};
 enum GameStatus{ACTIVE=100,GAMEOVER,STALEMATE};
@@ -18,6 +20,7 @@ public:
     CPiece(char r,int rank,bool isw){
         representation = r; isWhite =isw; this->rank = rank;
     }
+    int getRank(){return rank;}
     bool getColor(){ return isWhite;}
     char getRep(){return representation;}
     virtual bool canMove(int ,int ,int ,int ,CPiece *board[8][8]) = 0; // Check if piece's move is legal or not
@@ -25,9 +28,12 @@ public:
 
 
 class CPawn : public CPiece{
+private:
+    bool isFirstMove;
 public:
+
     CPawn(){}
-    CPawn(bool isw):CPiece('p',1,isw){}
+    CPawn(bool isw):CPiece('p',1,isw){isFirstMove = true;}
     bool canMove(int ,int,int,int,CPiece* board[8][8]);
 };
 
@@ -48,9 +54,13 @@ public:
 };
 
 class CRook : public CPiece{
+private:
+    bool isCastling;
 public:
     CRook(){}
-    CRook(bool isw) : CPiece('r',5,isw){}
+    CRook(bool isw) : CPiece('r',5,isw){
+        isCastling = true;
+    }
     bool canMove(int,int,int,int,CPiece *board[8][8]);
 
 };
@@ -63,9 +73,13 @@ public:
 };
 
 class CKing : public CPiece {
+private:
+    bool isCastling;
 public:
     CKing(){}
-    CKing(bool isw) : CPiece('K',0,isw){}
+    CKing(bool isw) : CPiece('K',0,isw){
+        isCastling = true;
+    }
     bool canMove(int,int,int,int,CPiece *board[8][8]);
 
 };
@@ -96,6 +110,14 @@ public:
     }
     void setStatus(PlayerStatus s){
         pS = s;
+    }
+    std::string getMoves(){
+        std::string mo;
+
+        std::vector<std::string>::iterator itr;
+        int i=1;
+        for(itr = moves.begin();itr<moves.end();++itr) mo +=std::to_string(i++)+"-"+*itr+", ";
+        return mo;
     }
     std::string showStatus(){
         if(pS==NORMAL)
@@ -132,6 +154,7 @@ public:
     void start();
     void move(std::string,CPiece* board[8][8]);
     bool isCheck(CPiece* board[8][8]);
+    bool isCheckMate(CPiece* board[8][8]);
 
 };
 
