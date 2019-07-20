@@ -1,5 +1,4 @@
 #include "chess.h"
-#include <windows.h>
 
 CBoard :: CBoard(){
     // config board. Set pieces start formation.
@@ -148,6 +147,7 @@ bool CRook :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
                 if(board[currX][i]!=nullptr) return false;
             }
         }
+        isCastling = false;
         return true;  
     }
     else if(currY == destY && currX != destX){
@@ -167,9 +167,10 @@ bool CRook :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
                 if(board[i][currY]!=nullptr) return false;
             }
         }
+        isCastling = false;
         return true;  
     }
-
+    isCastling = false;
     return true;
 }
 

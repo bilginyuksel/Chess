@@ -3,6 +3,7 @@
 #include <math.h>
 #include "chessExc.h"
 #include <string>
+#include <windows.h>
 
 // enum columns{a,b,c,d,e,f,g,h};
 enum GameStatus{ACTIVE=100,GAMEOVER,STALEMATE};
