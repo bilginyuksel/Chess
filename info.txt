@@ -1,2 +1,1 @@
-Rok if king not moved and no pieces between king and rook you can rok.
-And automatic checkmate search.
+Castling is not done. Needs to debug.

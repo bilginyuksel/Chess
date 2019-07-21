@@ -131,6 +131,9 @@ public:
     void addMove(std::string move){
         moves.push_back(move);
     }
+    PlayerStatus getStatus(){
+        return pS;
+    }
     void setColor(bool c){color=c;}
     bool getColor(){return color;}
 };
@@ -155,7 +158,7 @@ public:
     void start();
     void move(std::string,CPiece* board[8][8]);
     bool isCheck(CPiece* board[8][8]);
-    bool isCheckMate(CPiece* board[8][8]);
+    bool isCheckmate(CPiece* board[8][8],bool);
 
 };
 

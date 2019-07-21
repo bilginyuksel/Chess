@@ -293,16 +293,17 @@ bool CKnight :: canMove(int currX, int currY, int destX, int destY, CPiece *boar
 
 bool CKing :: canMove(int currX, int currY, int destX, int destY, CPiece *board[8][8]){
 
-    // if(board[destX][destY]!=nullptr && board[destX][destY]->getRep()=='r' && isCastling){
+    // if(board[destX][destY]!=nullptr && board[destX][destY]->getColor()==getColor() && board[destX][destY]->getRep()=='r' && isCastling){
     //     // castling thing...
     //     // x's have to stable
     //     if(currX!=destX) return false;
     //     int cd = destY-currY;
     //     if(cd<0){
-    //         for(int i=currY;)
+    //         for(int i=currY-1;i>destY;i--) if(board[destX][i]!=nullptr) return false;
     //     }else{
-
+    //         for(int i=currY+1;i<destY;i++) if(board[destX][i]!=nullptr) return false;
     //     }
+    //     return true;
     // }
 
     // Check if same color piece at the destination
@@ -329,6 +330,13 @@ int calcRank(bool turn,CPiece*board[8][8]){
 void CChess :: start(){
     
     do{
+        if(turn?player1.getStatus()==CHECK:player2.getStatus()==CHECK){
+            if(isCheckmate(gBoard.board,turn)) {
+                gS = GAMEOVER;
+                turn?player1.setStatus(CHECKMATE):player2.setStatus(CHECKMATE);
+                break;
+            }
+        }
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
         std::cout<<(turn?player1.getMoves():player2.getMoves())<<std::endl;
         std::cout<<(turn?"White player":"Black player")<<std::endl;
@@ -405,6 +413,15 @@ void CChess :: move(std::string m,CPiece* board[8][8]){
         // for eat situation (kill the piece) we have to check move valid until the last destination**
 
 
+        auto castling = [board,currX,currY,destX,destY]() ->void {
+            int isShort = currY-destY;
+            if(abs(isShort)>2){
+                // if negative direction, positive direction
+            }else{
+                // negative castling positive castling.
+            }
+        };
+
         CPiece * currPiece = board[currX][currY];
         CPiece * destPiece = board[destX][destY];
 
@@ -467,18 +484,62 @@ bool CChess :: isCheck(CPiece* board[8][8]){
     return false;
 }
 
-bool CChess :: isCheckMate(CPiece* board[8][8]){
+namespace checkmate{
+    CPiece *oldPiece, *destPiece;
+    auto doS = [](int cx,int cy,int dx,int dy,CPiece* board[8][8])->void{
+        oldPiece = board[cx][cy];
+        destPiece = board[dx][dy];
+        board[dx][dy] = board[cx][cy];
+        board[cx][cy] = nullptr;
+    };
+    auto undoS = [](int cx,int cy,int dx,int dy,CPiece* board[8][8],CPiece* old,CPiece* dest)->void{
+        board[cx][cy] = old;
+        board[dx][dy] = dest;
+        // memory leak
+        delete oldPiece;
+        delete destPiece;
+        oldPiece = nullptr;
+        destPiece = nullptr;
+    };
+};
 
+bool CChess :: isCheckmate(CPiece* board[8][8],bool color){
+
+    // find piece indices.
+    std::vector<std::pair<int,int>> pieces;
+    for(int i=0;i<8;i++){
+        for(int j=0;j<8;j++){
+            if(board[i][j]->getColor() == color){
+                pieces.push_back(std::make_pair(i,j));
+            }
+        }
+    }
+
+    // try to move any piece.
     // Check for all possible moves, and if any move doesnt rescue you from your check status
-    // it is checkmate
-    // std::vector <CPiece> pieces;
-    // for(int i=0;i<8;i++){
-    //     for(int j=0;j<8;j++){
-    //         pieces.push_back();
-    //     }
-    // }
 
-    // Play all the same color pieces, for all possible moves. Figure how to do this.
+    for(auto itr = pieces.begin();itr<pieces.end();itr++){
+        for(int i=0;i<8;i++){
+            for(int j=0;j<8;j++){
+                if(board[itr->first][itr->second]->canMove(itr->first,itr->second,i,j,board)){
+                    checkmate::doS(itr->first,itr->second,i,j,board);
+                    if(isCheck(board)){
+                        checkmate::undoS(itr->first,itr->second,i,j,board,checkmate::oldPiece,checkmate::destPiece);
+                        return false;
+                    }
+                    else{
+                        checkmate::undoS(itr->first,itr->second,i,j,board,checkmate::oldPiece,checkmate::destPiece);
+                    }
+                    // one piece trying every places to move
+                    // move the piece
+                    // check if is in check
+                    // if it is not incheck
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 int main(){
