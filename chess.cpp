@@ -61,13 +61,13 @@ bool CPawn :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
     int dist = destX-currX;
     
     // First move could be 2 step for pawn.
-    if(dist==2 && isFirstMove){
+    if(dist==2 && isFirstMove && currY==destY){
         for(int i=currX+1;i<=destX;i++){
             if(board[i][currY]!=nullptr) return false;
         }
         isFirstMove = false;
         return true;
-    }else if(dist==-2 && isFirstMove){
+    }else if(dist==-2 && isFirstMove && currY==destY){
         for(int i=currX-1;i>=destX;i--){
             if(board[i][currY]!=nullptr) return false;
         }
@@ -330,19 +330,22 @@ int calcRank(bool turn,CPiece*board[8][8]){
 void CChess :: start(){
     
     do{
-        if(turn?player1.getStatus()==CHECK:player2.getStatus()==CHECK){
-            if(isCheckmate(gBoard.board,turn)) {
-                gS = GAMEOVER;
-                turn?player1.setStatus(CHECKMATE):player2.setStatus(CHECKMATE);
-                break;
-            }
-        }
+        
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
         std::cout<<(turn?player1.getMoves():player2.getMoves())<<std::endl;
         std::cout<<(turn?"White player":"Black player")<<std::endl;
         std::cout<<"Score : "<<calcRank(turn,gBoard.board)<<std::endl;
         std::cout<<"Status :"<<(turn?player1.showStatus():player2.showStatus())<<std::endl;
-        // point
+
+        if(turn?player1.getStatus()==CHECK:player2.getStatus()==CHECK){
+            if(isCheckmate(gBoard.board,turn)) {
+                gS = GAMEOVER;
+                turn?player1.setStatus(CHECKMATE):player2.setStatus(CHECKMATE);
+                std::cout<<"Game Over"<<std::endl;
+                std::cout<<(!turn?"White player won !!!":"Black player won !!!")<<std::endl;
+                break;
+            }
+        }
 
         
         gBoard.display();
@@ -365,6 +368,8 @@ void CChess :: start(){
 
 
     }while((gS != GAMEOVER) ||  (gS !=STALEMATE));
+
+    
 }
 
 
@@ -413,14 +418,14 @@ void CChess :: move(std::string m,CPiece* board[8][8]){
         // for eat situation (kill the piece) we have to check move valid until the last destination**
 
 
-        auto castling = [board,currX,currY,destX,destY]() ->void {
-            int isShort = currY-destY;
-            if(abs(isShort)>2){
-                // if negative direction, positive direction
-            }else{
-                // negative castling positive castling.
-            }
-        };
+        // auto castling = [board,currX,currY,destX,destY]() ->void {
+        //     int isShort = currY-destY;
+        //     if(abs(isShort)>2){
+        //         // if negative direction, positive direction
+        //     }else{
+        //         // negative castling positive castling.
+        //     }
+        // };
 
         CPiece * currPiece = board[currX][currY];
         CPiece * destPiece = board[destX][destY];
@@ -496,8 +501,8 @@ namespace checkmate{
         board[cx][cy] = old;
         board[dx][dy] = dest;
         // memory leak
-        delete oldPiece;
-        delete destPiece;
+        // delete oldPiece;
+        // delete destPiece;
         oldPiece = nullptr;
         destPiece = nullptr;
     };
@@ -509,36 +514,47 @@ bool CChess :: isCheckmate(CPiece* board[8][8],bool color){
     std::vector<std::pair<int,int>> pieces;
     for(int i=0;i<8;i++){
         for(int j=0;j<8;j++){
-            if(board[i][j]->getColor() == color){
+            if(board[i][j]!=nullptr && board[i][j]->getColor() == color){
                 pieces.push_back(std::make_pair(i,j));
             }
         }
     }
+    // for(auto itr = pieces.begin();itr<pieces.end();++itr)
+    //     std::cout<<"x : "<<itr->first<<", y : "<<itr->second<<std::endl;
 
     // try to move any piece.
     // Check for all possible moves, and if any move doesnt rescue you from your check status
 
     for(auto itr = pieces.begin();itr<pieces.end();itr++){
+        // std::cout<<"Frist iteration "<<itr->first<<","<<itr->second<<std::endl;
         for(int i=0;i<8;i++){
             for(int j=0;j<8;j++){
                 if(board[itr->first][itr->second]->canMove(itr->first,itr->second,i,j,board)){
+                    // std::cout<<"Can move"<<std::endl;
                     checkmate::doS(itr->first,itr->second,i,j,board);
-                    if(isCheck(board)){
+                    // std::cout<<"doS"<<std::endl;
+                    if(!isCheck(board)){
+                        // std::cout<<"Is check control"<<std::endl;
                         checkmate::undoS(itr->first,itr->second,i,j,board,checkmate::oldPiece,checkmate::destPiece);
+                        // std::cout<<"UndoS"<<std::endl;
                         return false;
                     }
                     else{
                         checkmate::undoS(itr->first,itr->second,i,j,board,checkmate::oldPiece,checkmate::destPiece);
+                        // std::cout<<"Else undoS"<<std::endl;
                     }
                     // one piece trying every places to move
                     // move the piece
                     // check if is in check
                     // if it is not incheck
+                }else{
+                    // std::cout<<"Elsee"<<std::endl;
                 }
             }
         }
     }
 
+    // std::cout<<"finisih"<<std::endl;
     return true;
 }
 
