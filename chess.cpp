@@ -82,14 +82,14 @@ bool CPawn :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
     // If distance is negative than it should be black pawn or it is invalid move
     if(dist<0 && getColor()==false) {
         // black moving
-        if(board[destX][destY]==nullptr){
+        if(board[destX][destY]==nullptr && destY==currY){
             // empty square move forward
             isFirstMove = false;
             return true;
         }else if(board[destX][destY]!=nullptr && destY==currY)return false;
         // not empty square it means trying to eat something
         // check if it has not the same color go on it.
-        if(board[destX][destY]!=nullptr && board[destX][destY]->getColor()!=getColor()){
+        if(board[destX][destY]!=nullptr && board[destX][destY]->getColor()!=getColor() && abs(destY-currY)==1){
             isFirstMove = false;
             return true;
         }
@@ -97,14 +97,14 @@ bool CPawn :: canMove(int currX,int currY,int destX,int destY,CPiece *board[8][8
 
     } else if(dist>0 && getColor()==true){    // If distance is positive than it should be black pawn or it is invalid move
         // white pawn moving forward
-        if(board[destX][destY]==nullptr){
+        if(board[destX][destY]==nullptr && destY==currY){
             // empty square move forward
             isFirstMove = false;
             return true;
         }else if(board[destX][destY]!=nullptr && destY==currY)return false;
         // not empty square it means trying to eat something
         // check if it has not the same color go on it.
-        if(board[destX][destY]!=nullptr && board[destX][destY]->getColor()!=getColor()){
+        if(board[destX][destY]!=nullptr && board[destX][destY]->getColor()!=getColor() && abs(destY-currY)==1){
             isFirstMove = false;
             return true;
         }
