@@ -23,3 +23,5 @@ for Windows
 <li>Every move recorded</li>
 <li>Piece scores recorded</li>
 </ul>
+
+<img src="assets/chessgame.png"/>
